@@ -21,6 +21,20 @@ function BigInteger(number, base, positive) {
     }
     this.sign = isPositive ? 1 : -1;
     this.number = [0];
+    //quick bit shifting calculation for base = 2^n
+    for (var i = 0, num = 1; i <= 6; i++, num <<= 1) {
+        if (num === base) {
+            for (var j = 0; j < number.length; j++) {
+                this.number[0] = BigInteger.uns(this.number[0]);
+                this.number[0] += BigInteger.digitValue(number.charAt(j), (base === 64));
+                BigInteger.normalize(this.number);
+                this._shiftLeft(i);
+            }
+            this._shiftRight(i);
+            return this;
+        }
+    }
+
     for (var i = 0; i < number.length; i++) {
         for (var j = 0; j < this.number.length; j++) {
             this.number[j] = BigInteger.uns(this.number[j]);
@@ -166,11 +180,12 @@ BigInteger.prototype._shiftLeft = function (other) {
             this.number[j] = BigInteger.uns(this.number[j]);
             this.number[j] = this.number[j] * (1 << other);
         }
-        this.normalize();
+        BigInteger.normalize(this.number);
     }
     for (var i = 0; i < bigShift; i++) {
         this.number.unshift(0);
     }
+    //BigInteger.normalize(this.number);
     return this;
 };
 BigInteger.prototype._addOne = function () {
@@ -254,7 +269,7 @@ BigInteger.prototype._addOne = function () {
                 temp = (temp << 1) | 0;
             }
         };
-        this.sign = this.sign * other.sign;
+        this.sign = that.sign * other.sign;
         return this;
     };
     obj.multiply = function (other) {
@@ -271,6 +286,17 @@ BigInteger.prototype._addOne = function () {
             this.sign = 0;
             return temp;
         }
+        //quick bit shifting calculation for other == 2^n
+        if (other.number.length === 1 && other.sign === 1) {
+            for (var i = 0, num = 1; i <= 6; i++, num<<=1) {
+                if (other.number[0] === num) {
+                    var r = new BigInteger(this.number[0] & (num-1));
+                    this._shiftRight(i);
+                    return r;
+                }
+            }
+        }
+
         var remainder = this.clone();
         var shiftAmount = ((this.number.length - other.number.length + 1)*32);
         this.number = [0];
