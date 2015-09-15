@@ -1,4 +1,4 @@
-
+// yorum
 function BigInteger(number, base, positive) {
     if (typeof number === 'number') {
         this.number = [Math.round(Math.abs(number))];
